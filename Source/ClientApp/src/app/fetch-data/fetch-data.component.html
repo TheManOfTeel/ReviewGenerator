@@ -1,0 +1,9 @@
+<div class="card">
+  <p *ngIf="!review"><em>Loading...</em></p>
+  <div class="container" *ngIf="review">
+    <h3>Review</h3>
+    <p>Rating: {{ review.rating }}</p>
+    <p>Summary: {{ review.summary }}</p>
+  </div>
+  <button (click)="generate()" [disabled]="!review">Generate</button>
+</div>
