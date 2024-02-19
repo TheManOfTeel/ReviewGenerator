@@ -1,6 +1,6 @@
-﻿using Review.Models;
+﻿using ReviewGenerator.Models;
 
-namespace Review.Services.Interfaces
+namespace ReviewGenerator.Services.Interfaces
 {
     public interface IReviewService
 	{

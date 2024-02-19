@@ -1,10 +1,10 @@
 ﻿using Newtonsoft.Json;
-using Review.Models;
-using Review.Services.Interfaces;
+using ReviewGenerator.Models;
+using ReviewGenerator.Services.Interfaces;
 using System.IO.Compression;
 using System.Text;
 
-namespace Review.Services
+namespace ReviewGenerator.Services
 {
 	public class ReviewService : IReviewService
 	{

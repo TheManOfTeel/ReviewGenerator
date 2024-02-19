@@ -1,9 +1,9 @@
 ﻿using NUnit.Framework;
-using Review.Models;
-using Review.Services;
-using Review.Services.Interfaces;
+using ReviewGenerator.Models;
+using ReviewGenerator.Services;
+using ReviewGenerator.Services.Interfaces;
 
-namespace Review.UnitTests
+namespace ReviewGenerator.UnitTests
 {
 	[TestFixture]
 	public class ReviewServiceTests
