@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Review.Models;
-using Review.Services.Interfaces;
+using ReviewGenerator.Models;
+using ReviewGenerator.Services.Interfaces;
 
-namespace Review.Controllers
+namespace ReviewGenerator.Controllers
 {
     [ApiController]
 	[Route("[controller]")]

@@ -1,7 +1,7 @@
-﻿using Review.Services.Interfaces;
-using Review.Services;
+﻿using ReviewGenerator.Services.Interfaces;
+using ReviewGenerator.Services;
 
-namespace Review
+namespace ReviewGenerator
 {
 	public class Startup
 	{
