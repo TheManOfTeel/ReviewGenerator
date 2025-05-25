@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using ReviewGenerator.Models;
 using ReviewGenerator.Services;
 using ReviewGenerator.Services.Interfaces;
@@ -27,10 +28,10 @@ namespace ReviewGenerator.UnitTests
 		{
 			CustomerReview customerReview = _sut.Generate();
 
-			Assert.IsNotNull(customerReview);
-			Assert.IsTrue(customerReview.Rating >= 1 && customerReview.Rating <= 5);
-			Assert.IsTrue(customerReview.Summary.Contains("very"));
-			Assert.IsTrue(customerReview.Summary.Contains("good"));
+			ClassicAssert.IsNotNull(customerReview);
+			ClassicAssert.IsTrue(customerReview.Rating >= 1 && customerReview.Rating <= 5);
+			ClassicAssert.IsTrue(customerReview.Summary.Contains("very"));
+			ClassicAssert.IsTrue(customerReview.Summary.Contains("good"));
 		}
 
 		[Test]
@@ -43,8 +44,8 @@ namespace ReviewGenerator.UnitTests
 			};
 			CustomerReview customerReview = _sut.Generate();
 
-			Assert.AreEqual(customerReview.Rating, 1);
-			Assert.AreEqual(customerReview.Summary, "I hated this product.");
+			ClassicAssert.AreEqual(customerReview.Rating, 1);
+			ClassicAssert.AreEqual(customerReview.Summary, "I hated this product.");
 		}
 
 		[TearDown]

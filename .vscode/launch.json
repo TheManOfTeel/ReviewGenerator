@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Source/bin/Debug/net8.0/ReviewGenerator.dll",
+            "program": "${workspaceFolder}/Source/bin/Debug/net9.0/ReviewGenerator.dll",
             "args": [],
             "cwd": "${workspaceFolder}/ReviewGenerator",
             "stopAtEntry": false,
