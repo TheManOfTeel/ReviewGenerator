@@ -9,7 +9,7 @@ namespace ReviewGenerator.Services
 	public class ReviewService : IReviewService
 	{
 		private readonly int keySize = 2;
-		private readonly int outputSize = 200;
+		private readonly int outputSize = 400;
 
 		/// <summary>
 		/// Generates a new fake review with a randomized rating(1-5) and constructed description from the ingested dataset.
@@ -124,7 +124,20 @@ namespace ReviewGenerator.Services
 		private string CreateReviewSummary()
 		{
 			var dataDictionary = CustomerReview.DataDictionary;
+			if (dataDictionary == null || dataDictionary.Count < keySize)
+			{
+				throw new ArgumentException("Data dictionary does not contain enough keys for the specified key size.");
+			}
+			if (outputSize <= 0)
+			{
+				throw new ArgumentException("Output size must be greater than zero.");
+			}
+			if (outputSize < keySize)
+			{
+				throw new ArgumentException("Output size must be greater than or equal to the key size.");
+			}
 
+			var punctuation = new[] { '.', '!', '?', ',', ';', ':' };
 			var random = new Random();
 			var output = new List<string>();
 			int n = 0;
@@ -132,14 +145,17 @@ namespace ReviewGenerator.Services
 			string prefix = dataDictionary.Keys.Skip(randomNum).Take(1).Single();
 			output.AddRange(prefix.Split());
 
-			while (true)
+			var res = "";
+			var isComputing = true;
+			while (isComputing)
 			{
 				var suffix = dataDictionary[prefix];
 				if (suffix.Count == 1)
 				{
 					if (suffix[0] == "")
 					{
-						return output.Aggregate(Join);
+						res = output.Aggregate(Join);
+						isComputing = false;
 					}
 					output.Add(suffix[0]);
 				}
@@ -150,11 +166,19 @@ namespace ReviewGenerator.Services
 				}
 				if (output.Count >= outputSize)
 				{
-					return output.Take(outputSize).Aggregate(Join);
+					res = output.Take(outputSize).Aggregate(Join);
+					isComputing = false;
 				}
 				n++;
 				prefix = output.Skip(n).Take(keySize).Aggregate(Join);
 			}
+
+			if (!string.IsNullOrEmpty(res) && !punctuation.Contains(res[res.Length - 1]))
+			{
+				// Add a random punctuation mark at the end of the summary but not ; or : or ,
+				res += punctuation[random.Next(punctuation.Length - 3)];
+			}
+			return res;
 		}
 
 		/// <summary>

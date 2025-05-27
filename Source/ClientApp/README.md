@@ -1,6 +1,6 @@
 # Review Generator
 
-This project uses [Angular CLI](https://github.com/angular/angular-cli) version 15.
+This project uses [Angular CLI](https://github.com/angular/angular-cli) version 19.
 
 ## Development server
 

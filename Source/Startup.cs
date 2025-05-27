@@ -19,14 +19,13 @@ namespace ReviewGenerator
 		{
 			services.AddControllers();
 			services.AddSingleton<IReviewService, ReviewService>();
-
-			var serviceProvider = services.BuildServiceProvider();
-			var reviewService = serviceProvider.GetService<IReviewService>();
-			reviewService.IngestInitData();
 		}
 
-		public void Configure(WebApplication app, IWebHostEnvironment env)
+		public void Configure(WebApplication app, IWebHostEnvironment env, IReviewService reviewService)
 		{
+			// Initialize the review service with the dataset.
+			reviewService.IngestInitData();
+
 			// Configure the HTTP request pipeline.
 			if (!app.Environment.IsDevelopment())
 			{

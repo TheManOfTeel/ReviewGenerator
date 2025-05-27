@@ -9,7 +9,7 @@ namespace ReviewGenerator.UnitTests
 	[TestFixture]
 	public class ReviewServiceTests
 	{
-		private IReviewService _sut;
+		private IReviewService? _sut;
 
 		[SetUp]
 		public void SetUp()
@@ -26,12 +26,14 @@ namespace ReviewGenerator.UnitTests
 		[Order(0)]
 		public void Generate_SuccessTest()
 		{
-			CustomerReview customerReview = _sut.Generate();
+			ClassicAssert.IsNotNull(_sut, "_sut should not be null");
+			CustomerReview customerReview = _sut!.Generate();
 
 			ClassicAssert.IsNotNull(customerReview);
 			ClassicAssert.IsTrue(customerReview.Rating >= 1 && customerReview.Rating <= 5);
-			ClassicAssert.IsTrue(customerReview.Summary.Contains("very"));
-			ClassicAssert.IsTrue(customerReview.Summary.Contains("good"));
+			ClassicAssert.IsNotNull(customerReview.Summary);
+			ClassicAssert.IsTrue(customerReview.Summary != null && customerReview.Summary.Contains("very"));
+			ClassicAssert.IsTrue(customerReview.Summary != null && customerReview.Summary.Contains("good"));
 		}
 
 		[Test]
@@ -40,11 +42,14 @@ namespace ReviewGenerator.UnitTests
 		{
 			CustomerReview.DataDictionary = new Dictionary<string, List<string>>
 			{
-				{ "lol", new List<string>{ "fail" } },
+				{ "lol", new List<string>{ "fail" } }
 			};
-			CustomerReview customerReview = _sut.Generate();
+
+			ClassicAssert.IsNotNull(_sut, "_sut should not be null");
+			CustomerReview customerReview = _sut!.Generate();
 
 			ClassicAssert.AreEqual(customerReview.Rating, 1);
+			ClassicAssert.AreEqual(customerReview.Summary, "I hated this product.");
 			ClassicAssert.AreEqual(customerReview.Summary, "I hated this product.");
 		}
 
