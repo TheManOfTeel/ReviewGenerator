@@ -1,5 +1,5 @@
 # Review Generator
-<strong>This project uses .NET 9 and Angular 15.</strong><br/>
+<strong>This project uses .NET 9 and Angular 19.</strong><br/>
 Utilizing a dataset generate fake video game reviews with a single endpoint. Ingests training data on startup.
 
 ## Building and running the application
