@@ -50,7 +50,6 @@ namespace ReviewGenerator.UnitTests
 
 			ClassicAssert.AreEqual(customerReview.Rating, 1);
 			ClassicAssert.AreEqual(customerReview.Summary, "I hated this product.");
-			ClassicAssert.AreEqual(customerReview.Summary, "I hated this product.");
 		}
 
 		[TearDown]
