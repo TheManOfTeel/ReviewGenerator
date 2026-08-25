@@ -1,8 +1,47 @@
-# Review Generator
-<strong>This project uses .NET 9 and Angular 19.</strong><br/>
-Utilizing a dataset generate fake video game reviews with a single endpoint. Ingests training data on startup.
+# Review Generator [![.NET CI](https://github.com/TheManOfTeel/ReviewGenerator/actions/workflows/dotnet.yml/badge.svg)](https://github.com/TheManOfTeel/ReviewGenerator/actions/workflows/dotnet.yml) [![Node.js CI](https://github.com/TheManOfTeel/ReviewGenerator/actions/workflows/node.yml/badge.svg)](https://github.com/TheManOfTeel/ReviewGenerator/actions/workflows/node.yml)
 
-## Building and running the application
-To build and run the application navigate to the ./Source/ directory and run the command ```dotnet run``` in the console to initiate the startup process. This will build and run the ASP.NET application and afterwards will build and run the front end Angular application. After running this command click on any of the links to navigate to the local webpage. Both links will route to the correct URL after all launch processes are completed.
+Review Generator creates fictional video game reviews from the local Amazon video game review dataset. The application uses .NET 10, Angular 22, Angular standalone components, and a second-order Markov model. Dataset ingestion happens when the API starts; no external model or network service is required.
 
-![image](https://github.com/user-attachments/assets/4b962ffc-0f11-4042-941f-124d207f5fbf)
+## Requirements
+
+- .NET SDK 10.0 or later
+- Node.js 20.19 or later
+- npm
+- The dataset at `Source/DataSet/reviews_Video_Games_5.json.gz`
+
+On macOS or Linux, trust the local HTTPS certificate once:
+
+```bash
+dotnet dev-certs https --trust
+```
+
+## Run the application
+
+Run from `Source/`:
+
+```bash
+dotnet run
+```
+
+The ASP.NET host loads the dataset and starts the Angular development server through the SPA proxy.
+
+The first startup can take several seconds while the local compressed dataset is loaded. Wait until both development servers report that they are listening before opening the application.
+
+- Web application: <https://localhost:44413>
+- ASP.NET API: <https://localhost:7180>
+- Generate endpoint: <https://localhost:7180/Api/generate>
+
+## Build and test
+
+```bash
+cd Source/ClientApp
+npm ci
+npm run build
+npm test -- --watch=false
+```
+
+From the repository root, run the .NET tests with:
+
+```bash
+dotnet test ReviewGenerator.sln
+```

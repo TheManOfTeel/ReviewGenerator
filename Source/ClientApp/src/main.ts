@@ -1,20 +1,28 @@
 import { enableProdMode } from '@angular/core';
-import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 
-import { AppModule } from './app/app.module';
+import { AppComponent } from './app/app.component';
+import { ContactComponent } from './app/contact/contact.component';
+import { HomeComponent } from './app/home/home.component';
 import { environment } from './environments/environment';
 
 export function getBaseUrl() {
   return document.getElementsByTagName('base')[0].href;
 }
 
-const providers = [
-  { provide: 'BASE_URL', useFactory: getBaseUrl, deps: [] }
-];
-
 if (environment.production) {
   enableProdMode();
 }
 
-platformBrowserDynamic(providers).bootstrapModule(AppModule)
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideHttpClient(withFetch()),
+    provideRouter([
+      { path: '', component: HomeComponent, pathMatch: 'full' },
+      { path: 'contact', component: ContactComponent }
+    ])
+  ]
+})
   .catch(err => console.log(err));

@@ -5,31 +5,17 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["main"]
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [20.x, 22.x, 23.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        cache-dependency-path: ./Source/ClientApp/package-lock.json
-    - name: Install
-      run: cd ./Source/ClientApp && npm ci
-    - name: Build
-      run: cd ./Source/ClientApp && npm run build --if-present
-    - name: Test
-      run: cd ./Source/ClientApp && npm test
+    uses: TheManOfTeel/SharedWorkflows/.github/workflows/node-ci.yml@v1.0.0
+    with:
+      working-directory: ./Source/ClientApp
+      node-version: 24.x
+      cache: npm
+      install-command: npm ci
+      build-command: npm run build --if-present
+      test-command: npm run test:ci --if-present

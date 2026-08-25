@@ -1,8 +1,10 @@
 import { Component } from '@angular/core';
+import { FetchDataComponent } from '../fetch-data/fetch-data.component';
 
 @Component({
   selector: 'app-home',
-  standalone: false,
+  standalone: true,
+  imports: [FetchDataComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })

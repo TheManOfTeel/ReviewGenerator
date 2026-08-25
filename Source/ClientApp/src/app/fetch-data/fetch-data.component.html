@@ -1,9 +1,25 @@
-<div class="card">
-  <p *ngIf="!review"><em>Loading...</em></p>
-  <div class="container" *ngIf="review">
-    <h3>Review</h3>
-    <p>Rating: {{ review.rating }}</p>
-    <p>Summary: {{ review.summary }}</p>
+<section class="review-panel" aria-live="polite">
+  <div class="review-panel__topline">
+    <span class="eyebrow">Fresh from the dataset</span>
+    <span class="status" *ngIf="isLoading">Writing...</span>
   </div>
-  <button (click)="generate()" [disabled]="!review">Generate</button>
-</div>
+
+  <ng-container *ngIf="review; else emptyState">
+    <blockquote>{{ review.summary }}</blockquote>
+    <div class="review-panel__footer">
+      <span class="rating" [attr.aria-label]="review.rating + ' out of 5 stars'">
+        <span *ngFor="let star of [1, 2, 3, 4, 5]" [class.rating__star--muted]="star > review.rating">&#9733;</span>
+      </span>
+      <span class="rating-label">{{ review.rating }}/5</span>
+    </div>
+  </ng-container>
+
+  <ng-template #emptyState>
+    <p class="empty-state" *ngIf="!isLoading && !hasError">Your next review is ready to be written.</p>
+    <p class="empty-state empty-state--error" *ngIf="hasError">The local dataset could not be reached.</p>
+  </ng-template>
+
+  <button class="generate-button" type="button" (click)="generate()" [disabled]="isLoading">
+    {{ isLoading ? 'Generating...' : 'Generate a review' }}
+  </button>
+</section>
