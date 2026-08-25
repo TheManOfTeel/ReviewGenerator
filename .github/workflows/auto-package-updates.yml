@@ -1,0 +1,16 @@
+name: Automated Package Updates
+
+on:
+  schedule:
+    - cron: '0 2 * * 1,3,5'
+  workflow_dispatch:
+
+jobs:
+  deps:
+    uses: TheManOfTeel/SharedWorkflows/.github/workflows/auto-package-updates.yml@v1.0.0
+    secrets: inherit
+    with:
+      working-directory: ./Source/ClientApp
+      base-branch: main
+      assignee: TheManOfTeel
+      labels: dependencies
