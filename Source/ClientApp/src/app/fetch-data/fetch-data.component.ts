@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 
@@ -14,7 +14,7 @@ export class FetchDataComponent {
   public isLoading = false;
   public hasError = false;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private changeDetector: ChangeDetectorRef) {
     this.generate();
   }
 
@@ -26,16 +26,18 @@ export class FetchDataComponent {
     this.review = undefined;
     this.isLoading = true;
     this.hasError = false;
-    return this.http.get<CustomerReview>('api/generate')
+    return this.http.get<CustomerReview>('/api/generate')
       .subscribe({
         next: (result) => {
           this.review = result;
           this.isLoading = false;
+          this.changeDetector.detectChanges();
         },
         error: (error: unknown) => {
           this.review = undefined;
           this.isLoading = false;
           this.hasError = true;
+          this.changeDetector.detectChanges();
           console.error(error);
         }
       });

@@ -1,6 +1,6 @@
 # Review Generator
 
-Review Generator creates fictional video game reviews from the local Amazon video game review dataset. The application uses .NET 10, Angular 22, and a second-order Markov model. Dataset ingestion happens when the API starts; no external model or network service is required.
+Review Generator creates fictional video game reviews from the local Amazon video game review dataset. The application uses .NET 10, Angular 22, Angular standalone components, and a second-order Markov model. Dataset ingestion happens when the API starts; no external model or network service is required.
 
 ## Requirements
 
@@ -24,6 +24,8 @@ dotnet run
 ```
 
 The ASP.NET host loads the dataset and starts the Angular development server through the SPA proxy.
+
+The first startup can take several seconds while the local compressed dataset is loaded. Wait until both development servers report that they are listening before opening the application.
 
 - Web application: <https://localhost:44413>
 - ASP.NET API: <https://localhost:7180>
