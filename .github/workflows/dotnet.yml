@@ -1,28 +1,17 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
 name: .NET CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 9.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+    uses: TheManOfTeel/SharedWorkflows/.github/workflows/dotnet-ci.yml@v1.0.0
+    with:
+      working-directory: .
+      dotnet-version: 9.0.x
+      restore-command: dotnet restore
+      build-command: dotnet build --no-restore
+      test-command: dotnet test --no-build --verbosity normal
