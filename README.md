@@ -1,4 +1,4 @@
-# Review Generator
+# Review Generator [![.NET CI](https://github.com/TheManOfTeel/ReviewGenerator/actions/workflows/dotnet.yml/badge.svg)](https://github.com/TheManOfTeel/ReviewGenerator/actions/workflows/dotnet.yml) [![Node.js CI](https://github.com/TheManOfTeel/ReviewGenerator/actions/workflows/node.yml/badge.svg)](https://github.com/TheManOfTeel/ReviewGenerator/actions/workflows/node.yml)
 
 Review Generator creates fictional video game reviews from the local Amazon video game review dataset. The application uses .NET 10, Angular 22, Angular standalone components, and a second-order Markov model. Dataset ingestion happens when the API starts; no external model or network service is required.
 
