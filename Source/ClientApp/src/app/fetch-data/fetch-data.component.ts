@@ -1,14 +1,18 @@
 import { Component } from '@angular/core';
+import { NgFor, NgIf } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-fetch-data',
-  standalone: false,
+  standalone: true,
+  imports: [NgFor, NgIf],
   templateUrl: './fetch-data.component.html',
   styleUrls: ['./fetch-data.component.css']
 })
 export class FetchDataComponent {
   public review?: CustomerReview;
+  public isLoading = false;
+  public hasError = false;
 
   constructor(private http: HttpClient) {
     this.generate();
@@ -20,16 +24,20 @@ export class FetchDataComponent {
    */
   public generate() {
     this.review = undefined;
-    return this.http.get<string>('api/generate')
-      .subscribe((result: string) => {
-        let parsedJson = JSON.parse(JSON.stringify(result));
-        this.review = {
-          rating: parsedJson.Rating,
-          summary: parsedJson.Summary
-        };
-      }, (error: any) => {
-        this.review = undefined;
-        console.error(error)
+    this.isLoading = true;
+    this.hasError = false;
+    return this.http.get<CustomerReview>('api/generate')
+      .subscribe({
+        next: (result) => {
+          this.review = result;
+          this.isLoading = false;
+        },
+        error: (error: unknown) => {
+          this.review = undefined;
+          this.isLoading = false;
+          this.hasError = true;
+          console.error(error);
+        }
       });
   }
 }

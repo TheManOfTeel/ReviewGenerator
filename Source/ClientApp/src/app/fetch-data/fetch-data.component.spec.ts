@@ -7,8 +7,7 @@ describe('FetchDataComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      declarations: [FetchDataComponent]
+      imports: [HttpClientTestingModule, FetchDataComponent]
     })
       .compileComponents();
   }));
@@ -19,7 +18,7 @@ describe('FetchDataComponent', () => {
   });
 
   it('should display loading', waitForAsync(() => {
-    const titleText = fixture.nativeElement.querySelector('p').textContent;
-    expect(titleText).toEqual('Loading...');
+    const statusText = fixture.nativeElement.querySelector('.status').textContent;
+    expect(statusText.trim()).toEqual('Writing...');
   }));
 });

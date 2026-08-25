@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using ReviewGenerator.Models;
 using ReviewGenerator.Services.Interfaces;
 
@@ -9,12 +8,10 @@ namespace ReviewGenerator.Controllers
 	[Route("[controller]")]
 	public class ApiController : ControllerBase
 	{
-		private readonly ILogger<ApiController> _logger;
 		private readonly IReviewService _reviewService;
 
-		public ApiController(ILogger<ApiController> logger, IReviewService reviewService)
+		public ApiController(IReviewService reviewService)
 		{
-			_logger = logger;
 			_reviewService = reviewService;
 		}
 
@@ -24,10 +21,9 @@ namespace ReviewGenerator.Controllers
 		/// <returns>JSON string</returns>
 		[HttpGet]
 		[Route("generate")]
-		public string Generate()
+		public CustomerReview Generate()
 		{
-			CustomerReview customerReview = _reviewService.Generate();
-			return JsonConvert.SerializeObject(customerReview);
+			return _reviewService.Generate();
 		}
 	}
 }

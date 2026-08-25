@@ -1,15 +1,21 @@
-using ReviewGenerator;
 using ReviewGenerator.Services.Interfaces;
+using ReviewGenerator.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-var startup = new Startup(builder.Configuration);
+builder.Services.AddControllers();
+builder.Services.AddSingleton<IReviewService, ReviewService>();
 
-startup.ConfigureServices(builder.Services);
 var app = builder.Build();
-var serviceProvider = app.Services;
-var reviewService = serviceProvider.GetService<IReviewService>();
-if (reviewService == null)
+var reviewService = app.Services.GetRequiredService<IReviewService>();
+reviewService.IngestInitData();
+
+if (!app.Environment.IsDevelopment())
 {
-	throw new InvalidOperationException("IReviewService is not registered in the service provider.");
+	app.UseHsts();
 }
-startup.Configure(app, builder.Environment, reviewService);
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.MapControllers();
+app.MapFallbackToFile("index.html");
+app.Run();

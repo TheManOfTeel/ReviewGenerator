@@ -1,15 +1,44 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
 using ReviewGenerator.Models;
 using ReviewGenerator.Services.Interfaces;
 using System.IO.Compression;
-using System.Text;
 
 namespace ReviewGenerator.Services
 {
 	public class ReviewService : IReviewService
 	{
+		private const string DatasetFileName = "reviews_Video_Games_5.json.gz";
 		private readonly int keySize = 2;
-		private readonly int outputSize = 400;
+		private readonly int outputSize = 80;
+		private readonly int minimumSentenceWords = 12;
+		private readonly ILogger<ReviewService>? logger;
+		private readonly Random random;
+		private Dictionary<string, List<string>>? dataDictionary;
+		private static readonly JsonSerializerOptions JsonOptions = new()
+		{
+			PropertyNameCaseInsensitive = true
+		};
+
+		public ReviewService(IWebHostEnvironment environment, ILogger<ReviewService> logger)
+		{
+			DatasetPath = Path.Combine(environment.ContentRootPath, "DataSet", DatasetFileName);
+			this.logger = logger;
+			random = Random.Shared;
+		}
+
+		public ReviewService(Dictionary<string, List<string>> dataDictionary, Random? random = null)
+		{
+			DatasetPath = string.Empty;
+			this.dataDictionary = dataDictionary;
+				this.random = random ?? Random.Shared;
+		}
+
+		internal string DatasetPath { get; }
+		public ReviewService(string datasetPath, Random? random = null)
+		{
+			DatasetPath = datasetPath;
+			this.random = random ?? Random.Shared;
+		}
 
 		/// <summary>
 		/// Generates a new fake review with a randomized rating(1-5) and constructed description from the ingested dataset.
@@ -17,24 +46,16 @@ namespace ReviewGenerator.Services
 		/// <returns>CustomerReview object</returns>
 		public CustomerReview Generate()
 		{
-			try
+			if (dataDictionary == null)
 			{
-				var random = new Random();
-				string generatedSummary = CreateReviewSummary();
-				return new CustomerReview
-				{
-					Rating = random.Next(1, 6),
-					Summary = generatedSummary
-				};
+				throw new InvalidOperationException("The review dataset has not been loaded.");
 			}
-			catch
+
+			return new CustomerReview
 			{
-				return new CustomerReview
-				{
-					Rating = 1,
-					Summary = "I hated this product."
-				};
-			}
+				Rating = random.Next(1, 6),
+				Summary = CreateReviewSummary(dataDictionary)
+			};
 		}
 
 		/// <summary>
@@ -43,88 +64,48 @@ namespace ReviewGenerator.Services
 		/// <exception cref="ArgumentException"></exception>
 		public void IngestInitData()
 		{
+			if (string.IsNullOrEmpty(DatasetPath))
+			{
+				throw new InvalidOperationException("ReviewService requires a dataset path when used by the application.");
+			}
+
 			try
 			{
-				var sb = new StringBuilder();
-				using (var ss = new FileStream("./DataSet/reviews_Video_Games_5.json.gz", FileMode.Open))
-				using (var ms = new MemoryStream())
-				{
-					using (var gZipStream = new GZipStream(ss, CompressionMode.Decompress))
-					{
-						gZipStream.CopyTo(ms);
-					}
-					ms.Seek(0, SeekOrigin.Begin);
-					using (var sr = new StreamReader(ms))
-					{
-						if (sr != null)
-						{
-							while (!sr.EndOfStream)
-							{
-								string? line = sr.ReadLine();
-								if (line == null)
-								{
-									break;
-								}
-								else
-								{
-									AmazonReviewItem? reviewItem = JsonConvert.DeserializeObject<AmazonReviewItem>(line);
-									if (reviewItem?.ReviewText != null)
-									{
-										sb.Append(reviewItem.ReviewText);
-									}
-								}
-							}
-						}
-					}
-				}
-
-				var words = sb.ToString().Split();
-				if (words.Length < outputSize)
-				{
-					throw new ArgumentException("Output size is out of range");
-				}
-
-				var dictionary = new Dictionary<string, List<string>>();
-				for (int i = 0; i < words.Length - keySize; i++)
-				{
-					var key = words.Skip(i).Take(keySize).Aggregate(Join);
-					string value;
-					if (i + keySize < words.Length)
-					{
-						value = words[i + keySize];
-					}
-					else
-					{
-						value = "";
-					}
-
-					if (dictionary.ContainsKey(key))
-					{
-						dictionary[key].Add(value);
-					}
-					else
-					{
-						dictionary.Add(key, new List<string>() { value });
-					}
-				}
-
-				CustomerReview.DataDictionary = dictionary;
-			}
-			catch
+			var dictionary = new Dictionary<string, List<string>>();
+			using var stream = File.OpenRead(DatasetPath);
+			using var gzipStream = new GZipStream(stream, CompressionMode.Decompress);
+			using var reader = new StreamReader(gzipStream);
+			while (reader.ReadLine() is { } line)
 			{
-				Console.WriteLine("Startup data ingestion has failed please check if the file exists.");
-				return;
+				var reviewItem = JsonSerializer.Deserialize<AmazonReviewItem>(line, JsonOptions);
+				if (!string.IsNullOrWhiteSpace(reviewItem?.ReviewText))
+				{
+					AddReview(dictionary, reviewItem.ReviewText);
+				}
 			}
+
+			if (dictionary.Count < keySize)
+			{
+				throw new InvalidOperationException("The review dataset did not contain enough usable reviews.");
+			}
+
+			dataDictionary = dictionary;
+			logger?.LogInformation("Loaded {KeyCount} review transitions from {DatasetPath}.", dictionary.Count, DatasetPath);
+		}
+		catch (Exception exception) when (exception is IOException or JsonException or InvalidDataException)
+		{
+			logger?.LogError(exception, "Unable to load the review dataset from {DatasetPath}.", DatasetPath);
+			throw new InvalidOperationException($"Unable to load the review dataset from '{DatasetPath}'.", exception);
+		}
 		}
 
 		/// <summary>
 		/// Create a new review summary utilizing the data dictionary.
 		/// </summary>
 		/// <returns></returns>
-		private string CreateReviewSummary()
+		private string CreateReviewSummary(Dictionary<string, List<string>> dataDictionary)
 		{
-			var dataDictionary = CustomerReview.DataDictionary;
-			if (dataDictionary == null || dataDictionary.Count < keySize)
+			if (dataDictionary.Count < keySize)
 			{
 				throw new ArgumentException("Data dictionary does not contain enough keys for the specified key size.");
 			}
@@ -137,48 +118,76 @@ namespace ReviewGenerator.Services
 				throw new ArgumentException("Output size must be greater than or equal to the key size.");
 			}
 
-			var punctuation = new[] { '.', '!', '?', ',', ';', ':' };
-			var random = new Random();
+			var sentenceEndings = new[] { '.', '!', '?' };
 			var output = new List<string>();
-			int n = 0;
-			int randomNum = random.Next(dataDictionary.Count);
+			var randomNum = random.Next(dataDictionary.Count);
 			string prefix = dataDictionary.Keys.Skip(randomNum).Take(1).Single();
 			output.AddRange(prefix.Split());
 
-			var res = "";
-			var isComputing = true;
-			while (isComputing)
+			while (output.Count < outputSize)
 			{
-				var suffix = dataDictionary[prefix];
-				if (suffix.Count == 1)
+				if (!dataDictionary.TryGetValue(prefix, out var suffix) || suffix.Count == 0)
 				{
-					if (suffix[0] == "")
-					{
-						res = output.Aggregate(Join);
-						isComputing = false;
-					}
-					output.Add(suffix[0]);
+					break;
 				}
-				else
+
+				var nextWord = suffix[random.Next(suffix.Count)];
+				if (string.IsNullOrWhiteSpace(nextWord))
 				{
-					randomNum = random.Next(suffix.Count);
-					output.Add(suffix[randomNum]);
+					break;
 				}
-				if (output.Count >= outputSize)
+
+				output.Add(nextWord);
+				prefix = string.Join(' ', output.TakeLast(Math.Min(keySize, output.Count)));
+				if (output.Count >= minimumSentenceWords && sentenceEndings.Contains(nextWord[^1]))
 				{
-					res = output.Take(outputSize).Aggregate(Join);
-					isComputing = false;
+					break;
 				}
-				n++;
-				prefix = output.Skip(n).Take(keySize).Aggregate(Join);
 			}
 
-			if (!string.IsNullOrEmpty(res) && !punctuation.Contains(res[res.Length - 1]))
+			var res = string.Join(' ', output.Take(outputSize));
+			res = NormalizeReview(res);
+			if (!string.IsNullOrEmpty(res) && !sentenceEndings.Contains(res[^1]))
 			{
-				// Add a random punctuation mark at the end of the summary but not ; or : or ,
-				res += punctuation[random.Next(punctuation.Length - 3)];
+				res += sentenceEndings[random.Next(sentenceEndings.Length)];
 			}
 			return res;
+		}
+
+		private void AddReview(Dictionary<string, List<string>> dictionary, string reviewText)
+		{
+			var words = reviewText.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+			for (var index = 0; index < words.Length - keySize; index++)
+			{
+				var key = string.Join(' ', words.Skip(index).Take(keySize));
+				if (!dictionary.TryGetValue(key, out var suffixes))
+				{
+					suffixes = new List<string>();
+					dictionary[key] = suffixes;
+				}
+				suffixes.Add(words[index + keySize]);
+			}
+
+			if (words.Length >= keySize)
+			{
+				var finalKey = string.Join(' ', words.TakeLast(keySize));
+				if (!dictionary.TryGetValue(finalKey, out var suffixes))
+				{
+					suffixes = new List<string>();
+					dictionary[finalKey] = suffixes;
+				}
+				suffixes.Add(string.Empty);
+			}
+		}
+
+		private static string NormalizeReview(string review)
+		{
+			var normalized = string.Join(' ', review.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+			normalized = normalized.Replace(" .", ".").Replace(" !", "!").Replace(" ?", "?")
+				.Replace(" ,", ",").Replace(" ;", ";").Replace(" :", ":");
+			return string.IsNullOrEmpty(normalized)
+				? normalized
+				: char.ToUpperInvariant(normalized[0]) + normalized[1..];
 		}
 
 		/// <summary>
@@ -187,9 +196,5 @@ namespace ReviewGenerator.Services
 		/// <param name="a"></param>
 		/// <param name="b"></param>
 		/// <returns>String of combined input strings</returns>
-		static string Join(string a, string b)
-		{
-			return a + " " + b;
-		}
 	}
 }

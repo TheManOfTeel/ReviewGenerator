@@ -1,16 +1,10 @@
-/* You can add global styles to this file, and also import other style files */
-
-/* Provide sufficient contrast against white background */
-a {
-  color: #0366d6;
+html {
+  background: #f1ede5;
 }
 
-code {
-  color: #e01a76;
-}
-
-.btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+body {
+  margin: 0;
+  background: radial-gradient(circle at 85% 10%, #f8d9bf 0, transparent 28rem), #f1ede5;
+  color: #1e2525;
+  font-family: "Avenir Next", "Helvetica Neue", sans-serif;
 }
