@@ -14,3 +14,4 @@ jobs:
       base-branch: main
       assignee: TheManOfTeel
       labels: dependencies
+      token: ${{ secrets.GITHUB_TOKEN }}
