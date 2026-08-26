@@ -11,6 +11,6 @@ jobs:
     secrets: inherit
     with:
       working-directory: ./Source/ClientApp
-      base-branch: main
-      assignee: TheManOfTeel
-      labels: dependencies
+    permissions:
+      contents: write
+      pull-requests: write

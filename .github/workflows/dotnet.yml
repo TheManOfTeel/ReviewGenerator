@@ -9,9 +9,3 @@ on:
 jobs:
   build:
     uses: TheManOfTeel/SharedWorkflows/.github/workflows/dotnet-ci.yml@v1.0.0
-    with:
-      working-directory: .
-      dotnet-version: 9.0.x
-      restore-command: dotnet restore
-      build-command: dotnet build --no-restore
-      test-command: dotnet test --no-build --verbosity normal
