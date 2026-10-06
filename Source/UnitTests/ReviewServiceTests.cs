@@ -37,7 +37,8 @@ namespace ReviewGenerator.UnitTests
 
 			var review = service.Generate();
 
-			Assert.That(review.Summary, Is.EqualTo("Hello world amazing game."));
+			Assert.That(review.Summary, Is.EqualTo("World amazing game."));
+			Assert.That(review.Rating, Is.EqualTo(4));
 		}
 
 		[Test]
