@@ -1,7 +1,8 @@
 ﻿using System.Text.Json;
+using System.IO.Compression;
+using System.Text.RegularExpressions;
 using ReviewGenerator.Models;
 using ReviewGenerator.Services.Interfaces;
-using System.IO.Compression;
 
 namespace ReviewGenerator.Services
 {
@@ -41,9 +42,10 @@ namespace ReviewGenerator.Services
 		}
 
 		/// <summary>
-		/// Generates a new fake review with a randomized rating(1-5) and constructed description from the ingested dataset.
+		/// Generate a new customer review.
 		/// </summary>
 		/// <returns>CustomerReview object</returns>
+		/// <exception cref="InvalidOperationException"></exception>
 		public CustomerReview Generate()
 		{
 			if (dataDictionary == null)
@@ -51,17 +53,19 @@ namespace ReviewGenerator.Services
 				throw new InvalidOperationException("The review dataset has not been loaded.");
 			}
 
+			var review = CreateReviewSummary(dataDictionary);
 			return new CustomerReview
 			{
-				Rating = random.Next(1, 6),
-				Summary = CreateReviewSummary(dataDictionary)
+				Rating = PredictRating(review),
+				Summary = review
 			};
 		}
 
 		/// <summary>
-		/// Ingest the data from the datasource and retain the ReviewText property to train. Stores this output to the CustomerReview class when completed as a dictionary.
+		/// Ingest the init data data from the datasource and retain the ReviewText property to train.
+		/// Stores this output to the CustomerReview class when completed as a dictionary.
 		/// </summary>
-		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="InvalidOperationException"></exception>
 		public void IngestInitData()
 		{
 			if (string.IsNullOrEmpty(DatasetPath))
@@ -102,7 +106,9 @@ namespace ReviewGenerator.Services
 		/// <summary>
 		/// Create a new review summary utilizing the data dictionary.
 		/// </summary>
-		/// <returns></returns>
+		/// <param name="dataDictionary">Dictionary from init data</param>
+		/// <returns>Newly generated review</returns>
+		/// <exception cref="ArgumentException"></exception>
 		private string CreateReviewSummary(Dictionary<string, List<string>> dataDictionary)
 		{
 			if (dataDictionary.Count < keySize)
@@ -154,6 +160,120 @@ namespace ReviewGenerator.Services
 			return res;
 		}
 
+		/// <summary>
+		/// Analyzes the sentiment of a review text and returns a rating from 1 to 5.
+		/// </summary>
+		/// <param name="reviewText">Raw text of the review from the dataset.</param>
+		/// <returns>Int review rating</returns>
+		public static int PredictRating(string reviewText)
+		{
+			if (string.IsNullOrWhiteSpace(reviewText))
+			{
+				return 3; // Neutral default for empty/null input
+			}
+
+			// Standardized lexical lookups with associated polarity weights
+			var lexicon = new (string Word, double Weight)[]
+			{
+				// Highly Positive (+2.0)
+				("excellent", 2.0), ("amazing", 2.0), ("outstanding", 2.0), ("fantastic", 2.0),
+				("perfect", 2.0), ("superb", 2.0), ("love", 2.0), ("loved", 2.0),
+				
+				// Positive (+1.0)
+				("good", 1.0), ("great", 1.0), ("nice", 1.0), ("enjoyed", 1.0),
+				("decent", 1.0), ("helpful", 1.0), ("satisfied", 1.0), ("recommend", 1.0),
+				
+				// Negative (-1.0)
+				("bad", -1.0), ("poor", -1.0), ("slow", -1.0), ("disappointed", -1.0),
+				("flawed", -1.0), ("annoying", -1.0), ("subpar", -1.0), ("overpriced", -1.0),
+				
+				// Highly Negative (-2.0)
+				("terrible", -2.0), ("horrible", -2.0), ("awful", -2.0), ("worst", -2.0),
+				("waste", -2.0), ("useless", -2.0), ("hate", -2.0), ("hated", -2.0)
+			};
+
+			var negations = new[] { "not", "no", "never", "n't", "neither", "barely", "hardly" };
+			var intensifiers = new (string Word, double Multiplier)[]
+			{
+				("very", 1.5), ("extremely", 2.0), ("really", 1.5), ("so", 1.4), ("absolutely", 2.0)
+			};
+
+			// Tokenize into lower-case words
+			string cleanText = Regex.Replace(reviewText.ToLowerInvariant(), @"[^\w\s']", " ");
+			string[] tokens = cleanText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+			double totalScore = 0.0;
+			int sentimentWordsCount = 0;
+
+			for (int i = 0; i < tokens.Length; i++)
+			{
+				string token = tokens[i];
+
+				foreach (var (word, weight) in lexicon)
+				{
+					if (token == word)
+					{
+						double currentWeight = weight;
+
+						// Check preceding tokens (window size of 2) for negations or intensifiers
+						bool isNegated = false;
+						double intensityMultiplier = 1.0;
+
+						for (int j = Math.Max(0, i - 2); j < i; j++)
+						{
+							string prevToken = tokens[j];
+
+							foreach (string neg in negations)
+							{
+								if (prevToken == neg)
+								{
+									isNegated = true;
+									break;
+								}
+							}
+
+							foreach (var (intWord, mult) in intensifiers)
+							{
+								if (prevToken == intWord)
+								{
+									intensityMultiplier *= mult;
+								}
+							}
+						}
+
+						if (isNegated)
+						{
+							currentWeight *= -0.8; // Reverse polarity with slight attenuation
+						}
+
+						currentWeight *= intensityMultiplier;
+						totalScore += currentWeight;
+						sentimentWordsCount++;
+						break;
+					}
+				}
+			}
+
+			// Exclamation mark booster edge case (signals heightened emotional intensity)
+			int exclamationCount = Regex.Matches(reviewText, @"!").Count;
+			if (totalScore > 0) totalScore += exclamationCount * 0.2;
+			if (totalScore < 0) totalScore -= exclamationCount * 0.2;
+
+			// Normalize aggregated score using hyperbolic tangent hyperbolic normalization
+			// tanh maps (-infinity, +infinity) to (-1.0, +1.0)
+			double normalized = Math.Tanh(totalScore / 3.0); 
+
+			// Map normalized sentiment [-1.0, 1.0] onto integer rating scale [1, 5]
+			int rating = (int)Math.Round((normalized + 1.0) * 2.0) + 1;
+
+			return Math.Clamp(rating, 1, 5);
+		}
+
+		/// <summary>
+		/// Add reviews to dictionary
+		/// </summary>
+		/// <param name="dictionary">Dictionary that we're building to store reviews</param>
+		/// <param name="reviewText">Review text from the dataset</param>
 		private void AddReview(Dictionary<string, List<string>> dictionary, string reviewText)
 		{
 			var words = reviewText.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -180,6 +300,11 @@ namespace ReviewGenerator.Services
 			}
 		}
 
+		/// <summary>
+		/// Normalize review to look more natural according to language standards
+		/// </summary>
+		/// <param name="review">Review that we want to normalize</param>
+		/// <returns>Normalized review</returns>
 		private static string NormalizeReview(string review)
 		{
 			var normalized = string.Join(' ', review.Split(' ', StringSplitOptions.RemoveEmptyEntries));
@@ -189,12 +314,5 @@ namespace ReviewGenerator.Services
 				? normalized
 				: char.ToUpperInvariant(normalized[0]) + normalized[1..];
 		}
-
-		/// <summary>
-		/// Helper method to join two strings
-		/// </summary>
-		/// <param name="a"></param>
-		/// <param name="b"></param>
-		/// <returns>String of combined input strings</returns>
 	}
 }
